@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCEAN - Pesanan Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: url('https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+        .overlay {
+            background-color: rgba(0, 0, 0, 0.85); /* Tema hitam/gelap dominan */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid #c0c0c0; /* Silver Accent */
+            border-radius: 12px;
+        }
+        .app-container {
+            width: 100%; max-width: 500px; min-height: 100vh;
+            display: flex; flex-direction: column; padding: 0 16px;
+        }
+        .step-section { display: none; padding: 20px 0; animation: fadeIn 0.3s ease-in-out; }
+        .step-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .form-input {
+            width: 100%; background: #000; color: white;
+            border: 1px solid #c0c0c0; padding: 12px; border-radius: 8px;
+            outline: none; transition: all 0.2s;
+        }
+        .form-input:focus { border-color: #f97316; box-shadow: 0 0 5px rgba(249,115,22,0.5); }
+        .form-input[readonly] { background: rgba(50, 50, 50, 0.8); color: #c0c0c0; cursor: not-allowed; }
+        select.form-input option { background-color: #000; color: white; }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <div class="app-container relative pb-24">
+            
+            <div class="text-center pt-8 pb-4 border-b border-[#c0c0c0]/50 mb-4">
+                <h1 class="font-black text-4xl text-[#f97316] tracking-tighter uppercase drop-shadow-md">OCEAN</h1>
+                <p class="text-[#14532d] bg-white border border-[#14532d] text-sm font-semibold inline-block px-3 py-1 rounded-md mt-1 shadow-md">Mie & Nasi Goreng</p>
+            </div>
+            
+            <!-- STEP 1 -->
+            <div id="step-1" class="step-section active flex-grow">
+                <div class="glass-panel p-6 text-center mt-4 border-t-4 border-[#f97316]">
+                    <h2 class="text-2xl font-bold text-white mb-2">Pesan Sekarang</h2>
+                    <p class="text-sm text-[#c0c0c0] mb-6">Masukkan nomor WhatsApp Anda untuk memulai.</p>
+                    <div class="space-y-4">
+                        <div class="text-left">
+                            <label class="block text-xs font-semibold text-[#c0c0c0] mb-1">Nomor WhatsApp / HP</label>
+                            <input type="tel" id="input-check-hp" placeholder="Contoh : 8123456789 (Tanpa '0')" class="form-input text-lg font-bold tracking-wider text-center" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+                        </div>
+                        <button onclick="checkPelanggan()" class="w-full bg-[#f97316] hover:bg-orange-600 text-black border border-white font-black py-3 rounded-lg shadow-[0_0_15px_rgba(249,115,22,0.6)]">Lanjutkan</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div id="step-2" class="step-section flex-grow">
+                <div class="flex items-center mb-4">
+                    <button onclick="navStep(1)" class="text-[#c0c0c0] mr-3 hover:text-white bg-black border border-[#c0c0c0] p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                    <h2 class="text-xl font-bold text-[#f97316]">Data Pengiriman</h2>
+                </div>
+                <div id="profile-alert" class="p-3 mb-4 rounded text-sm hidden border"></div>
+                <form id="form-profile" onsubmit="saveProfile(event)" class="glass-panel p-5 space-y-4">
+                    <input type="hidden" id="cust-id"><input type="hidden" id="cust-is-new" value="true">
+                    <div>
+                        <label class="block text-xs font-semibold text-[#c0c0c0] mb-1">Nomor WhatsApp</label>
+                        <input type="text" id="cust-hp" readonly class="form-input font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-[#c0c0c0] mb-1">Nama Pemesan</label>
+                        <input type="text" id="cust-nama" required class="form-input" placeholder="Masukkan nama Anda">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-[#c0c0c0] mb-1">Alamat Lengkap Pengiriman</label>
+                        <textarea id="cust-alamat" required class="form-input h-24 resize-none" placeholder="Contoh: Jl. Merdeka No.10..."></textarea>
+                    </div>
+                    <div id="edit-mode-btn" class="hidden text-right">
+                        <button type="button" onclick="enableEdit()" class="text-[#f97316] text-sm font-bold underline">Edit Data</button>
+                    </div>
+                    <button type="submit" id="btn-save-profile" class="w-full bg-[#f97316] text-black font-black py-3 rounded-lg shadow-md border border-white">Lanjut Pemesanan</button>
+                </form>
+            </div>
+
+            <!-- STEP 3 -->
+            <div id="step-3" class="step-section flex-grow">
+                <div class="flex items-center mb-4">
+                    <button onclick="navStep(2)" class="text-[#c0c0c0] mr-2 hover:text-white bg-black border border-[#c0c0c0] p-2 rounded-full"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                    <h2 class="text-xl font-bold text-[#f97316]">Pilih Menu</h2>
+                </div>
+                <div id="menu-container" class="space-y-4 mb-6"></div>
+                <div class="glass-panel p-4 mb-6 space-y-4 border-t-4 border-[#14532d]">
+                    <h3 class="font-bold text-[#f97316] text-sm border-b border-[#c0c0c0]/50 pb-2">Jadwal & Pembayaran</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-[#c0c0c0] mb-1">Tanggal Antar</label>
+                            <input type="date" id="ord-date" required class="form-input text-sm p-2" style="color-scheme: dark;">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-[#c0c0c0] mb-1">Jam (24 Jam)</label>
+                            <input type="time" id="ord-time" required class="form-input text-sm p-2" style="color-scheme: dark;">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-[#c0c0c0] mb-1">Metode Pembayaran</label>
+                        <select id="ord-pay" class="form-input text-sm p-2">
+                            <option value="Cash">Cash (Bayar di Tempat)</option>
+                            <option value="QRIS">QRIS</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4 -->
+            <div id="step-4" class="step-section text-center py-8 flex-grow">
+                <div class="glass-panel p-8 border-2 border-[#f97316]">
+                    <div class="w-20 h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-[#f97316] shadow-[0_0_15px_rgba(249,115,22,0.5)]">
+                        <svg class="w-10 h-10 text-[#f97316]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <h2 class="text-2xl font-black text-white mb-2">Pesanan Diterima!</h2>
+                    <p class="text-[#c0c0c0] mb-6 text-sm leading-relaxed">Terima Kasih Telah Melakukan Pemesanan. Hubungi <span class="font-bold text-[#f97316]">0813 893 1177</span> Jika Ada Kendala. <span class="text-[#f97316] font-bold inline-block">Mie & Nasi Goreng Ocean</span></p>
+                    <div class="bg-black p-4 rounded-lg border border-[#c0c0c0] text-left mb-8">
+                        <div class="text-xs text-[#c0c0c0] mb-1">Nomor Invoice:</div>
+                        <div class="font-mono font-bold text-[#f97316] text-lg mb-3" id="success-inv">INV-XXX</div>
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <div>
+                                <div class="text-xs text-[#c0c0c0] mb-1">Tanggal Antar:</div>
+                                <div class="font-bold text-white text-sm" id="success-tgl">-</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-[#c0c0c0] mb-1">Jam Antar:</div>
+                                <div class="font-bold text-white text-sm" id="success-jam">-</div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-[#c0c0c0] mb-1">Pemesan:</div>
+                        <div class="font-bold text-white text-sm" id="success-nama">Nama</div>
+                        <div class="text-[#c0c0c0] text-xs mt-1" id="success-alamat">Alamat</div>
+                    </div>
+                    <button onclick="resetApp()" class="w-full bg-[#14532d] text-white font-bold py-3 rounded-lg border border-white hover:bg-green-800">Pesan Lagi</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="sticky-footer" class="hidden fixed bottom-0 left-0 right-0 max-w-[500px] mx-auto glass-panel border-b-0 rounded-b-none p-4 shadow-[0_-5px_20px_rgba(0,0,0,0.8)] z-20 bg-black/95">
+            <div class="flex justify-between items-center mb-3">
+                <div><div class="text-xs text-[#c0c0c0]">Total Pesanan</div><div class="font-bold text-white text-lg" id="summary-qty">0 Porsi</div></div>
+                <div class="text-right"><div class="text-xs text-[#c0c0c0]">Total Harga</div><div class="font-bold text-2xl text-[#f97316]" id="summary-price">Rp 0</div></div>
+            </div>
+            <button onclick="checkout()" class="w-full bg-[#f97316] text-black border border-white font-black py-3 rounded-lg flex justify-center items-center gap-2">
+                <span>Pesan Sekarang</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+        </div>
+    </div>
+    
+    <div id="loading-overlay" class="hidden fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#f97316] mb-4"></div>
+        <p id="loading-msg" class="text-[#f97316] font-bold animate-pulse">Memuat Data...</p>
+    </div>
+    <div id="custom-modal" class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-black border border-[#c0c0c0] p-6 rounded-xl max-w-sm w-full text-center shadow-[0_0_20px_rgba(249,115,22,0.4)]">
+            <h3 id="modal-title" class="text-xl font-bold text-[#f97316] mb-2">Info</h3>
+            <p id="modal-msg" class="text-white mb-6 text-sm"></p>
+            <div id="modal-actions" class="flex justify-center gap-3">
+                <button onclick="closeModal()" class="bg-[#f97316] text-black px-6 py-2 rounded font-bold border border-white">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let DB = { menu: [] }; let currentUser = { isEdited: false };
+        function getEl(id) { return document.getElementById(id); }
+        function formatMoney(num) { return new Intl.NumberFormat('id-ID').format(num); }
+        function toLocalYMD(date) { const y = date.getFullYear(), m = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; }
+        function getLocalTimestamp() { const now = new Date(); return `${toLocalYMD(now)}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`; }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '-'; const d = new Date(dateStr); if (isNaN(d)) return dateStr;
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        }
+        function formatWaktuSiangMalam(timeStr) {
+            if (!timeStr) return "-";
+            if (timeStr.includes('T')) {
+                const d = new Date(timeStr);
+                timeStr = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            }
+            let hour = parseInt(timeStr.split(':')[0]);
+            let suffix = (hour >= 0 && hour <= 14) ? 'Siang' : 'Malam';
+            return `${timeStr} (${suffix})`;
+        }
+
+        let modalCallback = null;
+        function showModal(title, msg, callback = null) { getEl('modal-title').innerText = title; getEl('modal-msg').innerHTML = msg; modalCallback = callback; getEl('custom-modal').classList.remove('hidden'); }
+        function closeModal() { getEl('custom-modal').classList.add('hidden'); if (modalCallback) modalCallback(); }
+        function showLoading(msg) { getEl('loading-msg').innerText = msg || "Memuat..."; getEl('loading-overlay').classList.remove('hidden'); }
+        function hideLoading() { getEl('loading-overlay').classList.add('hidden'); }
+
+        function navStep(step) {
+            document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
+            getEl(`step-${step}`).classList.add('active');
+            step === 3 ? getEl('sticky-footer').classList.remove('hidden') : getEl('sticky-footer').classList.add('hidden');
+        }
+
+        window.onload = () => {
+            showLoading("Memuat Data Menu...");
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler((res) => {
+                    hideLoading(); try {
+                        const parsed = JSON.parse(res); if (!parsed.success) return showModal('Error', parsed.error);
+                        DB.menu = parsed.data.menu || [];
+                        generateMenuSlots(); getEl('ord-date').value = toLocalYMD(new Date());
+                    } catch(e) {}
+                }).getAppData();
+            } else { hideLoading(); generateMenuSlots(); }
+        };
+
+        function checkPelanggan() {
+            const hpClean = getEl('input-check-hp').value.replace(/\D/g, ''); 
+            if(hpClean.length < 9) return showModal("Peringatan", "Nomor tidak valid.");
+            getEl('cust-hp').value = hpClean;
+            
+            showLoading("Mengecek Nomor di Database...");
+            
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler((res) => {
+                    hideLoading();
+                    try {
+                        const parsed = JSON.parse(res);
+                        if (parsed.error) return showModal('Error Server', parsed.error);
+                        processCustomerData(parsed);
+                    } catch (e) {
+                        showModal('Error', 'Gagal memproses data server.');
+                    }
+                }).checkCustomerByHP(hpClean);
+            } else {
+                hideLoading(); processCustomerData({ found: false, nextId: 'OC-999' });
+            }
+        }
+
+        function processCustomerData(result) {
+            const box = getEl('profile-alert');
+            currentUser.isEdited = false; 
+
+            if (result.found) {
+                const exist = result.data;
+                getEl('cust-id').value = exist.id; getEl('cust-nama').value = exist.nama; getEl('cust-alamat').value = exist.alamat; getEl('cust-is-new').value = "false";
+                getEl('cust-nama').setAttribute('readonly', true); getEl('cust-alamat').setAttribute('readonly', true);
+                box.className = "p-3 mb-4 rounded text-sm bg-black text-[#f97316] border border-[#f97316]"; 
+                box.innerHTML = `<strong>Ditemukan!</strong> Halo, ${exist.nama}. Data pengiriman Anda telah terisi otomatis.`;
+                getEl('edit-mode-btn').classList.remove('hidden');
+                getEl('btn-save-profile').innerText = "Lanjutkan Pemesanan";
+            } else {
+                getEl('cust-id').value = result.nextId;
+                getEl('cust-nama').value = ""; getEl('cust-alamat').value = ""; getEl('cust-is-new').value = "true";
+                getEl('cust-nama').removeAttribute('readonly'); getEl('cust-alamat').removeAttribute('readonly');
+                box.className = "p-3 mb-4 rounded text-sm bg-black text-[#c0c0c0] border border-[#c0c0c0]"; 
+                box.innerHTML = `<strong>Nomor Baru.</strong> Silakan lengkapi data pengiriman Anda.`;
+                getEl('edit-mode-btn').classList.add('hidden');
+                getEl('btn-save-profile').innerText = "Lanjut Pemesanan";
+            }
+            box.classList.remove('hidden'); navStep(2);
+        }
+
+        function enableEdit() { 
+            getEl('cust-nama').removeAttribute('readonly'); 
+            getEl('cust-alamat').removeAttribute('readonly'); 
+            getEl('cust-nama').focus(); 
+            currentUser.isEdited = true; 
+            getEl('edit-mode-btn').classList.add('hidden'); 
+            getEl('btn-save-profile').innerText = "Simpan Perubahan & Lanjut";
+        }
+        function saveProfile(e) { e.preventDefault(); navStep(3); }
+
+        function generateMenuSlots() {
+            let opts = '<option value="">-- Pilih Menu Disini --</option>' + DB.menu.map((m, i) => `<option value="${i}">${m.nama} (${m.porsi}) - Rp ${formatMoney(m.harga)}</option>`).join('');
+            getEl('menu-container').innerHTML = [1,2,3].map(i => `
+                <div class="glass-panel p-4 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-[#f97316]"></div>
+                    <h4 class="font-bold text-[#f97316] text-sm mb-3">Pesanan ${i}</h4>
+                    <div class="space-y-3">
+                        <select id="ord-menu-${i}" onchange="calcTotal()" class="form-input text-sm font-bold">${opts}</select>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="block text-xs text-[#c0c0c0] mb-1">Jumlah</label><div class="flex items-center rounded-lg bg-black border border-[#c0c0c0]"><button type="button" onclick="adjustQty(${i}, -1)" class="w-10 h-10 text-white font-bold">-</button><input type="number" id="ord-qty-${i}" value="0" min="0" readonly class="w-full text-center bg-transparent outline-none text-white text-sm"><button type="button" onclick="adjustQty(${i}, 1)" class="w-10 h-10 text-[#f97316] font-bold">+</button></div></div>
+                            <div><label class="block text-xs text-[#c0c0c0] mb-1">Pedas</label><select id="ord-pedas-${i}" class="form-input text-xs p-2"><option>Tidak Pedas</option><option>Sedang</option><option>Pedas</option></select></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><label class="block text-xs text-[#c0c0c0] mb-1">Telur</label><select id="ord-telur-${i}" class="form-input text-xs p-2"><option>Dadar</option><option>Orak Arik</option><option>Rebus</option><option>Tanpa Telur</option></select></div>
+                            <div><label class="block text-xs text-[#c0c0c0] mb-1">Catatan</label><input type="text" id="ord-note-${i}" placeholder="Opsional..." class="form-input text-xs p-2"></div>
+                        </div>
+                    </div>
+                </div>`).join('');
+        }
+        function adjustQty(s, a) { const i = getEl(`ord-qty-${s}`); i.value = Math.max(0, parseInt(i.value)+a); calcTotal(); }
+        function calcTotal() {
+            let tQ = 0, tP = 0;
+            for(let i=1;i<=3;i++){ const mI = getEl(`ord-menu-${i}`).value, q = parseInt(getEl(`ord-qty-${i}`).value)||0; if (mI!==""&&q>0) { tQ+=q; tP+=(DB.menu[mI].harga*q); } }
+            getEl('summary-qty').innerText = `${tQ} Porsi`; getEl('summary-price').innerText = `Rp ${formatMoney(tP)}`;
+        }
+
+        function checkout() {
+            const dD = getEl('ord-date').value, dT = getEl('ord-time').value; if (!dD || !dT) return showModal("Perhatian", "Lengkapi Tanggal dan Jam!");
+            const items = []; let tQ=0, tP=0;
+            for(let i=1;i<=3;i++){ const mI = getEl(`ord-menu-${i}`).value, q = parseInt(getEl(`ord-qty-${i}`).value)||0; if (mI!==""&&q>0) { const m = DB.menu[mI]; items.push({nama:m.nama, porsi:m.porsi, harga:m.harga, qty:q, subtotal:m.harga*q, pedas:getEl(`ord-pedas-${i}`).value, telur:getEl(`ord-telur-${i}`).value, catatan:getEl(`ord-note-${i}`).value}); tQ+=q; tP+=(m.harga*q); } }
+            if (items.length===0) return showModal("Perhatian", "Pesanan kosong!");
+            
+            const payload = {
+                pelanggan: { id: getEl('cust-id').value, nama: getEl('cust-nama').value, hp: getEl('cust-hp').value, alamat: getEl('cust-alamat').value, isNew: getEl('cust-is-new').value === "true", isEdited: currentUser.isEdited },
+                order: { invoice: `INV-${toLocalYMD(new Date()).replace(/-/g,'')}-${Math.floor(Math.random()*900)+100}`, sysDate: getLocalTimestamp(), items: items, totalQty: tQ, totalPrice: tP, deliveryDate: dD, deliveryTime: dT, payment: getEl('ord-pay').value, status: "Pending" }
+            };
+            showLoading("Memproses pesanan...");
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler(res => { hideLoading(); if(res.success) showSuccess(payload.order.invoice, payload.pelanggan.nama, payload.pelanggan.alamat, dD, dT); else showModal("Gagal", res.message); }).submitCustomerOrder(JSON.stringify(payload));
+            } else { setTimeout(() => { hideLoading(); showSuccess(payload.order.invoice, payload.pelanggan.nama, payload.pelanggan.alamat, dD, dT); }, 1500); }
+        }
+        function showSuccess(inv, nama, alamat, tgl, jam) { 
+            getEl('success-inv').innerText = inv; 
+            getEl('success-nama').innerText = nama; 
+            getEl('success-alamat').innerText = alamat; 
+            getEl('success-tgl').innerText = formatDate(tgl);
+            getEl('success-jam').innerText = formatWaktuSiangMalam(jam);
+            navStep(4); 
+        }
+        function resetApp() {
+            getEl('input-check-hp').value = ''; 
+            for(let i=1;i<=3;i++){ 
+                if(getEl(`ord-menu-${i}`)) getEl(`ord-menu-${i}`).value=''; 
+                if(getEl(`ord-qty-${i}`)) getEl(`ord-qty-${i}`).value='0'; 
+                if(getEl(`ord-note-${i}`)) getEl(`ord-note-${i}`).value=''; 
+            } 
+            calcTotal(); 
+            getEl('profile-alert').classList.add('hidden');
+            navStep(1);
+        }
+    </script>
+</body>
+</html>
